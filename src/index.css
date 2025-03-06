@@ -1,13 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: "Gilda Display", serif;
+  background-color: #D8D1AE;
+  color: #715100;
+  text-align: center;
+  padding: 40px;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* Chat message styling */
+.chat-bubble {
+  display: block;
+  max-width: 75%;
+  padding: 10px 15px;
+  border-radius: 10px;
+  margin: 5px 0;
+  word-wrap: break-word;
+  line-height: 1.5; /* Fixes text being jammed together */
+}
+
+.user-message {
+  background-color: #5A3E00;
+  color: white;
+  text-align: right;
+  align-self: flex-end;
+}
+
+.bot-message {
+  background-color: #EFE8D4;
+  color: #5A3E00;
+  text-align: left;
+  align-self: flex-start;
 }

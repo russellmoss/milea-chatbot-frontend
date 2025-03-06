@@ -1,0 +1,16 @@
+C:\Users\russe\milea-chatbot-frontend\src\components\chat\
+├── ChatWidget.jsx (main component, significantly simplified)
+├── hooks\
+│   ├── useMessages.js (message state management)
+│   └── useWineSearch.js (wine search logic)
+├── utils\
+│   ├── textUtils.js (text cleaning and formatting)
+│   ├── wineUtils.js (wine-specific utilities)
+│   ├── stringMatching.js (fuzzy matching, normalization)
+│   └── formatters.js (data formatting functions)
+├── services\
+│   └── apiService.js (API calls)
+└── components\
+    ├── MessageList.jsx (display messages)
+    ├── MessageInput.jsx (input and send button)
+    └── WineCard.jsx (formatted wine display)
