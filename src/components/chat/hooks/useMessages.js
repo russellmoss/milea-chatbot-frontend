@@ -51,6 +51,8 @@ export const useMessages = () => {
       'give a free tasting',
       'free tasting referral',
       'share a tasting',
+      'send a tasting',  // Added for direct tasting referral queries
+      'send tasting',    // Shorter variant
       'sign up for milea miles',
       'access milea miles',
       'milea miles account',
@@ -132,18 +134,18 @@ export const useMessages = () => {
       const userInput = input.toLowerCase();
       
       // Check for Milea Miles referral requests
-      if (isReferralRequest(userInput)) {
-        setMessages([
-          ...updatedMessages,
-          { 
-            role: "bot", 
-            content: "I'd be happy to help you send a free tasting through our Milea Miles program! You can access it below:",
-            component: "MileaMilesReferral" // This tells your UI to render the iframe component
-          }
-        ]);
-        setLoading(false);
-        return;
-      }
+    if (isReferralRequest(userInput)) {
+      setMessages([
+        ...updatedMessages,
+        { 
+          role: "bot", 
+          content: "I'd be happy to help you send a free tasting through our Milea Miles program! You can access it below:",
+          component: "MileaMilesReferral" // This tells your UI to render the custom component
+        }
+      ]);
+      setLoading(false);
+      return;
+    }
       
       // Check for logout requests
       const isLogoutRequest = userInput.includes("log me out") || 

@@ -1,24 +1,30 @@
 import React from 'react';
 
+/**
+ * Component to display information about the Milea Miles referral program
+ * with a link to the external portal
+ */
 const MileaMilesReferral = () => {
   return (
     <div className="w-full flex flex-col items-center">
-      <div className="w-full bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-lg font-bold mb-3">Milea Miles Referral Program</h3>
-        <p className="mb-4">
-          To send a free tasting through our Milea Miles program, please visit our dedicated portal.
+      <div className="w-full bg-amber-50 rounded-lg shadow-md p-4 border border-amber-200">
+        <h3 className="text-xl font-bold text-amber-900 mb-3">Milea Miles Referral Program</h3>
+        <p className="mb-4 text-amber-800">
+          You can send a free wine tasting to friends through our Milea Miles program!
         </p>
-        <a 
-          href="https://miles.mileaestatevineyard.com/" 
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block bg-[#715100] text-white py-2 px-4 rounded font-medium hover:bg-[#5A3E00] transition-colors"
-        >
-          Access Milea Miles
-        </a>
+        <div className="flex justify-center">
+          <a 
+            href="https://miles.mileaestatevineyard.com/" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block bg-amber-800 text-white py-2 px-6 rounded-md font-medium hover:bg-amber-900 transition-colors"
+          >
+            Access Milea Miles Portal →
+          </a>
+        </div>
       </div>
-      <div className="mt-4 text-sm text-gray-600 italic">
-        Log in or create an account to send free tastings to your friends and family!
+      <div className="mt-3 text-sm text-gray-600">
+        Log in with your Milea account or create a new one to start sending free tastings!
       </div>
     </div>
   );

@@ -19,6 +19,8 @@ body {
   margin: 5px 0;
   word-wrap: break-word;
   line-height: 1.5; /* Fixes text being jammed together */
+  text-align: left;
+  white-space: normal !important;
 }
 
 .user-message {
@@ -31,6 +33,83 @@ body {
 .bot-message {
   background-color: #EFE8D4;
   color: #5A3E00;
-  text-align: left;
   align-self: flex-start;
+}
+
+/* Markdown styling for chat bubbles */
+.chat-bubble h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+  line-height: 1.2;
+}
+
+.chat-bubble h2 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+  line-height: 1.2;
+}
+
+.chat-bubble a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.chat-bubble strong {
+  font-weight: bold;
+}
+
+.chat-bubble em {
+  font-style: italic;
+}
+
+/* Enhanced list styling */
+.chat-bubble ul, 
+.chat-bubble ol {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+  display: block;
+  list-style-position: outside;
+  text-align: left;
+}
+
+.chat-bubble ul {
+  list-style-type: disc;
+}
+
+.chat-bubble ol {
+  list-style-type: decimal;
+}
+
+.chat-bubble li {
+  display: list-item;
+  margin-bottom: 0.25rem;
+  padding-left: 0.25rem;
+  text-align: left;
+}
+
+/* Fix for nested lists */
+.chat-bubble ul ul,
+.chat-bubble ol ol,
+.chat-bubble ul ol,
+.chat-bubble ol ul {
+  margin-top: 0.25rem;
+}
+
+/* Remove excess space after lists */
+.chat-bubble br + ul,
+.chat-bubble br + ol {
+  margin-top: 0;
+}
+
+/* Fix for markdown content inside chat bubbles */
+.markdown-content {
+  width: 100%;
+  overflow-wrap: break-word;
+}
+
+/* Ensure proper display of inline elements */
+.markdown-content p {
+  margin-bottom: 0.75rem;
 }

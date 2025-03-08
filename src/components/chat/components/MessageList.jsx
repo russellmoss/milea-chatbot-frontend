@@ -1,5 +1,6 @@
 import React from "react";
-import MileaMilesReferral from "./MileaMilesReferral"; // Import the component
+import MileaMilesReferral from "./MileaMilesReferral";
+import parseMarkdown from "../utils/markdownParser";
 
 /**
  * Component to display the list of messages
@@ -15,15 +16,12 @@ const MessageList = ({ messages, loading }) => {
           key={index} 
           className={`chat-bubble ${
             msg.role === "user" ? "user-message bg-[#715100] text-white text-right ml-12" : "bot-message bg-[#F9F4E9] text-[#5A3E00] mr-12"
-          } p-3 rounded-lg whitespace-pre-line`}
+          } p-3 rounded-lg`}
         >
-          {msg.content}
-          
-          {/* Render Milea Miles component if needed */}
-          {msg.component === "MileaMilesReferral" && (
-            <div className="mt-4">
-              <MileaMilesReferral />
-            </div>
+          {msg.component === "MileaMilesReferral" ? (
+            <MileaMilesReferral />
+          ) : (
+            <div className="markdown-content" dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.content) }} />
           )}
         </div>
       ))}
