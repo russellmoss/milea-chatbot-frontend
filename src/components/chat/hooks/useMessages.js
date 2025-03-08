@@ -63,22 +63,36 @@ export const useMessages = () => {
       async (customerInfo) => {
         setMessages(prev => [
           ...prev, 
-          { role: "bot", content: "✅ Login successful! I can now provide information about your account." }
+          { role: "bot", content: `✅ Login successful! Welcome back, ${customerInfo.firstName || 'valued customer'}. I can now provide information about your account.` }
         ]);
         
         // Process pending question if any
         if (pendingQuestion) {
-          const response = await processAuthenticatedQuestion(pendingQuestion, customerInfo);
-          setMessages(prev => [...prev, { role: "bot", content: response }]);
+          try {
+            const response = await processAuthenticatedQuestion(pendingQuestion, customerInfo);
+            setMessages(prev => [...prev, { role: "bot", content: response }]);
+          } catch (error) {
+            console.error("Error processing authenticated question:", error);
+            setMessages(prev => [
+              ...prev, 
+              { role: "bot", content: "I'm sorry, but I encountered an error while retrieving your account information. Please try asking your question again." }
+            ]);
+          }
           setPendingQuestion(null);
         }
       },
       // Failure callback
-      () => {
+      (errorMessage) => {
         setMessages(prev => [
           ...prev, 
-          { role: "bot", content: "❌ Login failed. Please check your email and password and try again." }
+          { role: "bot", content: `❌ Login failed. ${errorMessage || 'Please check your email and password and try again.'}` }
         ]);
+        
+        // Reset the login form state after a short delay
+        setTimeout(() => {
+          setShowLoginForm(false);
+          setPendingQuestion(null);
+        }, 3000);
       }
     );
   };
@@ -102,6 +116,14 @@ export const useMessages = () => {
                              userInput.includes("sign out") ||
                              userInput.includes("sign me out");
       
+      // NEW: Check for wine club general information queries first
+      const isGeneralWineClubQuery = 
+          (userInput.includes("join") && userInput.includes("wine club")) ||
+          (userInput.includes("joining") && userInput.includes("wine club")) ||
+          (userInput.includes("information") && userInput.includes("wine club")) ||
+          (userInput.includes("about") && userInput.includes("wine club")) ||
+          (userInput.includes("learn") && userInput.includes("wine club"));
+          
       if (isLogoutRequest) {
         if (authToken) {
           // User is logged in, so log them out
@@ -110,6 +132,18 @@ export const useMessages = () => {
         } else {
           // User isn't logged in
           botResponse = "You're not currently logged in.";
+        }
+      }
+      // NEW: Handle general wine club info via RAG
+      else if (isGeneralWineClubQuery) {
+        try {
+          console.log("📡 Sending wine club query to RAG endpoint:", input);
+          // Use the processChatRequest function which now calls the RAG endpoint
+          const response = await processChatRequest(input);
+          botResponse = response;
+        } catch (error) {
+          console.error("❌ Error calling RAG endpoint:", error);
+          botResponse = "I'm sorry, I couldn't process your request. Please try again later.";
         }
       }
       // Check for queries requiring authentication

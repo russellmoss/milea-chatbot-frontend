@@ -1,4 +1,6 @@
-import { useState } from 'react';
+// src/components/chat/hooks/useAuthentication.js
+import { useState, useEffect } from 'react';
+import api from '../services/apiService';
 
 export const useAuthentication = () => {
   const [authToken, setAuthToken] = useState(localStorage.getItem("commerce7Token"));
@@ -7,20 +9,22 @@ export const useAuthentication = () => {
   const [password, setPassword] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [loyaltyError, setLoyaltyError] = useState(null);
 
   // Fetch customer data with token
   const fetchCustomerData = async (token) => {
     try {
-      const response = await fetch("http://localhost:8080/api/customer/me", {
+      const response = await api.get("/api/customer/me", {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setCustomerData(data);
-        return data;
+      if (response.data) {
+        setCustomerData(response.data);
+        setLoyaltyPoints(response.data.loyaltyPoints || 0);
+        return response.data;
       } else {
         // Token might be expired
         logout();
@@ -28,6 +32,10 @@ export const useAuthentication = () => {
       }
     } catch (error) {
       console.error("Error fetching customer data:", error);
+      if (error.response?.status === 401) {
+        logout(); // Unauthorized - clear token
+      }
+      setLoyaltyError("Could not fetch customer data");
       return null;
     }
   };
@@ -37,24 +45,32 @@ export const useAuthentication = () => {
     if (!email || !password) return;
     
     setLoginLoading(true);
+    setLoyaltyError(null);
     
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password })
+      const response = await api.post("/api/auth/login", {
+        email, 
+        password
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        
+      if (response.data && response.data.success && response.data.user) {
         // Save token and customer ID
-        localStorage.setItem("commerce7Token", data.token);
-        localStorage.setItem("customerId", data.customerId);
+        localStorage.setItem("commerce7Token", response.data.token);
+        localStorage.setItem("customerId", response.data.customerId);
         
-        setAuthToken(data.token);
+        // Make sure user data exists before trying to use it
+        if (response.data.user.firstName && response.data.user.lastName) {
+          localStorage.setItem("userName", `${response.data.user.firstName} ${response.data.user.lastName}`);
+        } else {
+          localStorage.setItem("userName", "Milea Customer");
+        }
+        
+        localStorage.setItem("userEmail", response.data.user.email || email);
+        
+        setAuthToken(response.data.token);
+        
+        // Set loyalty points directly from the login response
+        setLoyaltyPoints(response.data.user.loyaltyPoints || 0);
         
         // Hide login form
         setShowLoginForm(false);
@@ -63,24 +79,67 @@ export const useAuthentication = () => {
         setEmail("");
         setPassword("");
         
-        // Fetch customer data
-        const customerInfo = await fetchCustomerData(data.token);
+        // Set customer data from login response
+        const customerInfo = response.data.user;
+        setCustomerData(customerInfo);
         
         if (onLoginSuccess) {
           onLoginSuccess(customerInfo);
         }
       } else {
+        // Clear any stored authentication data on error
+        localStorage.removeItem("commerce7Token");
+        localStorage.removeItem("customerId");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userEmail");
+        
         if (onLoginFailure) {
-          onLoginFailure();
+          onLoginFailure(response.data?.error || "Login failed");
         }
+        setLoyaltyError("Login failed");
       }
     } catch (error) {
       console.error("Login error:", error);
+      
+      let errorMessage = "An error occurred during login";
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.status === 404) {
+        errorMessage = "Customer not found";
+      }
+      
+      // Clear any stored authentication data on error
+      localStorage.removeItem("commerce7Token");
+      localStorage.removeItem("customerId");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("userEmail");
+      
+      setLoyaltyError(errorMessage);
+      
       if (onLoginFailure) {
-        onLoginFailure(error);
+        onLoginFailure(errorMessage);
       }
     } finally {
       setLoginLoading(false);
+    }
+  };
+  
+  // Fetch loyalty points separately
+  const fetchLoyaltyPoints = async () => {
+    if (!authToken) return;
+    
+    try {
+      const response = await api.get("/api/customer/loyalty-points", {
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        }
+      });
+      
+      setLoyaltyPoints(response.data.points || 0);
+      setLoyaltyError(null);
+    } catch (error) {
+      console.error("Error fetching loyalty points:", error);
+      setLoyaltyError("Could not fetch loyalty points");
     }
   };
   
@@ -88,8 +147,11 @@ export const useAuthentication = () => {
   const logout = () => {
     localStorage.removeItem("commerce7Token");
     localStorage.removeItem("customerId");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
     setAuthToken(null);
     setCustomerData(null);
+    setLoyaltyPoints(0);
   };
   
   // Auto-logout when component unmounts or window unloads
@@ -104,6 +166,13 @@ export const useAuthentication = () => {
     };
   };
 
+  // Check token on initialization
+  useEffect(() => {
+    if (authToken) {
+      fetchCustomerData(authToken);
+    }
+  }, [authToken]);
+
   return {
     authToken,
     customerData,
@@ -117,6 +186,9 @@ export const useAuthentication = () => {
     login,
     logout,
     fetchCustomerData,
-    setupAutoLogout
+    setupAutoLogout,
+    loyaltyPoints,
+    fetchLoyaltyPoints,
+    loyaltyError
   };
 };
