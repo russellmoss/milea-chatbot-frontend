@@ -1,4 +1,5 @@
 import React from "react";
+import MileaMilesReferral from "./MileaMilesReferral"; // Import the component
 
 /**
  * Component to display the list of messages
@@ -17,6 +18,13 @@ const MessageList = ({ messages, loading }) => {
           } p-3 rounded-lg whitespace-pre-line`}
         >
           {msg.content}
+          
+          {/* Render Milea Miles component if needed */}
+          {msg.component === "MileaMilesReferral" && (
+            <div className="mt-4">
+              <MileaMilesReferral />
+            </div>
+          )}
         </div>
       ))}
       {loading && (

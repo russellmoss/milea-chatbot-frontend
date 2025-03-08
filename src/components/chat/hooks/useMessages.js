@@ -38,6 +38,28 @@ export const useMessages = () => {
     requiresAuthentication
   } = useCustomerQueries();
   
+  // Function to detect referral-related queries
+  const isReferralRequest = (message) => {
+    const lowerMessage = message.toLowerCase();
+    const referralPatterns = [
+      'send a free tasting',
+      'send free tasting',
+      'send a referral', 
+      'send referral',
+      'refer a friend',
+      'invite a friend',
+      'give a free tasting',
+      'free tasting referral',
+      'share a tasting',
+      'sign up for milea miles',
+      'access milea miles',
+      'milea miles account',
+      'my milea miles'
+    ];
+    
+    return referralPatterns.some(pattern => lowerMessage.includes(pattern));
+  };
+  
   // Add initialization message and check for existing login
   useEffect(() => {
     setMessages([
@@ -108,6 +130,20 @@ export const useMessages = () => {
     try {
       let botResponse;
       const userInput = input.toLowerCase();
+      
+      // Check for Milea Miles referral requests
+      if (isReferralRequest(userInput)) {
+        setMessages([
+          ...updatedMessages,
+          { 
+            role: "bot", 
+            content: "I'd be happy to help you send a free tasting through our Milea Miles program! You can access it below:",
+            component: "MileaMilesReferral" // This tells your UI to render the iframe component
+          }
+        ]);
+        setLoading(false);
+        return;
+      }
       
       // Check for logout requests
       const isLogoutRequest = userInput.includes("log me out") || 
