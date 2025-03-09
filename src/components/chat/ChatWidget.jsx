@@ -2,7 +2,9 @@ import React from "react";
 import { useMessages } from "./hooks/useMessages";
 import MessageList from "./components/MessageList";
 import MessageInput from "./components/MessageInput";
-import LoginForm from "./components/LoginForm"; // We'll create this component
+import LoginForm from "./components/LoginForm";
+import MailingListSignup from "./components/MailingListSignup";
+import MileaMilesReferral from "./components/MileaMilesReferral";
 
 const ChatWidget = () => {
   const { 
@@ -18,7 +20,13 @@ const ChatWidget = () => {
     setEmail,
     password,
     setPassword,
-    loginLoading
+    loginLoading,
+    showMailingListSignup,
+    setShowMailingListSignup,
+    handleMailingListSuccess,
+    // Add new state for Miles referral
+    showMilesReferral,
+    setShowMilesReferral
   } = useMessages();
 
   return (
@@ -34,14 +42,33 @@ const ChatWidget = () => {
           handleLogin={handleLogin}
           loading={loginLoading}
         />
-      ) : (
-        <MessageInput 
-          input={input}
-          setInput={setInput}
-          sendMessage={sendMessage}
-          handleKeyDown={handleKeyDown}
-          loading={loading}
+      ) : showMailingListSignup ? (
+        <MailingListSignup 
+          onClose={() => setShowMailingListSignup(false)}
+          onSuccess={handleMailingListSuccess}
         />
+      ) : (
+        <>
+          {/* Add the MileaMilesReferral component when needed */}
+          {showMilesReferral && (
+            <div className="mb-4">
+              <MileaMilesReferral />
+              <button 
+                onClick={() => setShowMilesReferral(false)}
+                className="mt-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Close
+              </button>
+            </div>
+          )}
+          <MessageInput 
+            input={input}
+            setInput={setInput}
+            sendMessage={sendMessage}
+            handleKeyDown={handleKeyDown}
+            loading={loading}
+          />
+        </>
       )}
     </div>
   );

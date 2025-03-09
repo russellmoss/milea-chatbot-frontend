@@ -9,6 +9,9 @@ export const useMessages = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [pendingQuestion, setPendingQuestion] = useState(null);
+  const [showMailingListSignup, setShowMailingListSignup] = useState(false);
+  // New state for showing the Miles referral component
+  const [showMilesReferral, setShowMilesReferral] = useState(false);
   
   const { 
     formatProductData, 
@@ -38,36 +41,12 @@ export const useMessages = () => {
     requiresAuthentication
   } = useCustomerQueries();
   
-  // Function to detect referral-related queries
-  const isReferralRequest = (message) => {
-    const lowerMessage = message.toLowerCase();
-    const referralPatterns = [
-      'send a free tasting',
-      'send free tasting',
-      'send a referral', 
-      'send referral',
-      'refer a friend',
-      'invite a friend',
-      'give a free tasting',
-      'free tasting referral',
-      'share a tasting',
-      'send a tasting',  // Added for direct tasting referral queries
-      'send tasting',    // Shorter variant
-      'sign up for milea miles',
-      'access milea miles',
-      'milea miles account',
-      'my milea miles'
-    ];
-    
-    return referralPatterns.some(pattern => lowerMessage.includes(pattern));
-  };
-  
   // Add initialization message and check for existing login
   useEffect(() => {
     setMessages([
       { 
         role: "bot", 
-        content: "👋 Hello! I'm your Milea Wine assistant. Ask me about our wines, inventory, club memberships, or your account information."
+        content: "👋 Hello! I'm your Milea Wine assistant. Ask me about our wines, club memberships, check your Milea Miles balance, send free tastings or join our mailing list by typing 'subscribe'."
       }
     ]);
     
@@ -120,6 +99,41 @@ export const useMessages = () => {
       }
     );
   };
+
+  // Handle successful mailing list signup
+  const handleMailingListSuccess = (successMessage) => {
+    setMessages(prev => [
+      ...prev,
+      { role: "bot", content: `✅ ${successMessage}` }
+    ]);
+    setShowMailingListSignup(false);
+  };
+  
+  // Check if text contains referral-related keywords
+  const isReferralRequest = (text) => {
+    const textLower = text.toLowerCase();
+    
+    // Define patterns that indicate referral intent
+    const referralPatterns = [
+      'send free tasting',
+      'free tasting',
+      'send tasting',
+      'send a free',
+      'send a tasting',
+      'refer friend',
+      'refer a friend',
+      'invite friend',
+      'share tasting',
+      'gift tasting',
+      'give tasting',
+      'free wine tasting',
+      'miles referral',
+      'milea miles',
+      'miles program'
+    ];
+    
+    return referralPatterns.some(pattern => textLower.includes(pattern));
+  };
   
   // Message sending logic
   const sendMessage = async () => {
@@ -133,36 +147,28 @@ export const useMessages = () => {
       let botResponse;
       const userInput = input.toLowerCase();
       
-      // Check for Milea Miles referral requests
-    if (isReferralRequest(userInput)) {
-      setMessages([
-        ...updatedMessages,
-        { 
-          role: "bot", 
-          content: "I'd be happy to help you send a free tasting through our Milea Miles program! You can access it below:",
-          component: "MileaMilesReferral" // This tells your UI to render the custom component
-        }
-      ]);
-      setLoading(false);
-      return;
-    }
-      
+      // *** NEW: Check for referral request first ***
+      if (isReferralRequest(userInput)) {
+        setShowMilesReferral(true);
+        botResponse = "You can send free wine tastings to friends through our Milea Miles program! I've provided a link below to access the Milea Miles portal where you can send referrals:";
+      }
+      // Check for mailing list signup request
+      else if (userInput.includes("subscribe") || 
+          userInput.includes("sign up") ||
+          userInput.includes("mailing list") || 
+          userInput.includes("newsletter") ||
+          userInput.includes("email list") ||
+          userInput.includes("join list")) {
+        // Show the mailing list signup form
+        setShowMailingListSignup(true);
+        botResponse = "I'd be happy to help you subscribe to our mailing list. Please fill out the form below:";
+      }
       // Check for logout requests
-      const isLogoutRequest = userInput.includes("log me out") || 
-                             userInput.includes("logout") || 
-                             userInput.includes("log out") || 
-                             userInput.includes("sign out") ||
-                             userInput.includes("sign me out");
-      
-      // NEW: Check for wine club general information queries first
-      const isGeneralWineClubQuery = 
-          (userInput.includes("join") && userInput.includes("wine club")) ||
-          (userInput.includes("joining") && userInput.includes("wine club")) ||
-          (userInput.includes("information") && userInput.includes("wine club")) ||
-          (userInput.includes("about") && userInput.includes("wine club")) ||
-          (userInput.includes("learn") && userInput.includes("wine club"));
-          
-      if (isLogoutRequest) {
+      else if (userInput.includes("log me out") || 
+               userInput.includes("logout") || 
+               userInput.includes("log out") || 
+               userInput.includes("sign out") ||
+               userInput.includes("sign me out")) {
         if (authToken) {
           // User is logged in, so log them out
           logout();
@@ -172,8 +178,12 @@ export const useMessages = () => {
           botResponse = "You're not currently logged in.";
         }
       }
-      // NEW: Handle general wine club info via RAG
-      else if (isGeneralWineClubQuery) {
+      // Handle general wine club info via RAG
+      else if ((userInput.includes("join") && userInput.includes("wine club")) ||
+               (userInput.includes("joining") && userInput.includes("wine club")) ||
+               (userInput.includes("information") && userInput.includes("wine club")) ||
+               (userInput.includes("about") && userInput.includes("wine club")) ||
+               (userInput.includes("learn") && userInput.includes("wine club"))) {
         try {
           console.log("📡 Sending wine club query to RAG endpoint:", input);
           // Use the processChatRequest function which now calls the RAG endpoint
@@ -256,6 +266,12 @@ export const useMessages = () => {
     setEmail,
     password,
     setPassword,
-    loginLoading
+    loginLoading,
+    showMailingListSignup,
+    setShowMailingListSignup,
+    handleMailingListSuccess,
+    // Add new state for Miles referral
+    showMilesReferral,
+    setShowMilesReferral
   };
 };

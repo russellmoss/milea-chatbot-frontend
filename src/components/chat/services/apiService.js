@@ -48,6 +48,24 @@ api.interceptors.response.use(
 );
 
 /**
+ * Subscribe a user to the mailing list
+ * @param {Object} userData - User data for subscription
+ * @param {string} userData.firstName - User's first name
+ * @param {string} userData.lastName - User's last name
+ * @param {string} userData.email - User's email address
+ * @returns {Promise<Object>} - Subscription response
+ */
+export const subscribeToMailingList = async (userData) => {
+  try {
+    const response = await api.post("/api/subscribe", userData);
+    return response.data;
+  } catch (error) {
+    console.error("Error subscribing to mailing list:", error);
+    throw error;
+  }
+};
+
+/**
  * Fetch wine data from Commerce7 API
  * @param {boolean} fetchAll - Whether to fetch all wines or just available ones
  * @returns {Promise<Array>} - Array of wine products
@@ -135,8 +153,6 @@ export const login = async (credentials) => {
     throw error;
   }
 };
-
-// src/components/chat/services/apiService.js
 
 /**
  * Fetch business hours from Google My Business
