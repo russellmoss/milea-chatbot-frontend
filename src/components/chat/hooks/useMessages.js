@@ -254,6 +254,7 @@ export const useMessages = () => {
 
   return {
     messages,
+    setMessages, // Added this line to expose setMessages
     loading,
     input,
     setInput,

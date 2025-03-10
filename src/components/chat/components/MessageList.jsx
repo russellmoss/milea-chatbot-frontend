@@ -7,8 +7,9 @@ import parseMarkdown from "../utils/markdownParser";
  * @param {Object} props - Component props
  * @param {Array} props.messages - List of message objects
  * @param {boolean} props.loading - Whether a message is being loaded
+ * @param {Function} props.onActionClick - Function to handle action button clicks
  */
-const MessageList = ({ messages, loading }) => {
+const MessageList = ({ messages, loading, onActionClick }) => {
   return (
     <div className="h-96 overflow-y-auto border-b pb-4 flex flex-col space-y-3">
       {messages.map((msg, index) => (
@@ -21,7 +22,21 @@ const MessageList = ({ messages, loading }) => {
           {msg.component === "MileaMilesReferral" ? (
             <MileaMilesReferral />
           ) : (
-            <div className="markdown-content" dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.content) }} />
+            <>
+              <div className="markdown-content" dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.content) }} />
+              
+              {/* Render action button if present */}
+              {msg.action && (
+                <div className="mt-3">
+                  <button 
+                    onClick={() => onActionClick && onActionClick(msg.action)}
+                    className="py-2 px-4 bg-[#5A3E00] text-white rounded-md hover:bg-[#483200] transition-colors"
+                  >
+                    {msg.action.text}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       ))}

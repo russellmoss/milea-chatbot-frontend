@@ -101,11 +101,119 @@ export const processChatRequest = async (message) => {
  */
 export const fetchWineClubInfo = async () => {
   try {
-    const response = await api.get("/api/commerce7/clubs");
+    const response = await api.get("/api/commerce7/club");
     return response.data;
   } catch (error) {
     console.error("Error fetching wine club info:", error);
     throw new Error("Failed to fetch wine club information");
+  }
+};
+
+/**
+ * Fetch information about a specific wine club by ID
+ * @param {string} clubId - The club ID to fetch
+ * @returns {Promise<Object>} - Wine club details
+ */
+export const fetchWineClubById = async (clubId) => {
+  try {
+    const response = await api.get(`/api/commerce7/club/${clubId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching club ${clubId}:`, error);
+    throw new Error("Failed to fetch wine club details");
+  }
+};
+
+/**
+ * Submit a wine club membership application
+ * @param {Object} formData - Wine club signup form data
+ * @returns {Promise<Object>} - API response with membership details
+ */
+export const submitWineClubMembership = async (formData) => {
+  try {
+    // Format the data for the Commerce7 API
+    const payload = formatMembershipData(formData);
+    
+    // Submit to our backend API (which will handle Commerce7 authentication)
+    const response = await api.post("/api/commerce7/club-signup", payload);
+    
+    return response.data;
+  } catch (error) {
+    console.error('Wine club signup error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Format membership data for the Commerce7 API
+ * @param {Object} formData - The form data from the signup component
+ * @returns {Object} - Formatted data for the API
+ */
+const formatMembershipData = (formData) => {
+  // Build the customer data
+  const customerData = {
+    firstName: formData.firstName,
+    lastName: formData.lastName,
+    email: formData.email,
+    phone: formData.phone,
+    password: formData.password,
+    
+    // Add addresses
+    addresses: [
+      {
+        type: 'shipping',
+        address: formData.shippingAddress.address,
+        address2: formData.shippingAddress.address2 || '',
+        city: formData.shippingAddress.city,
+        stateCode: formData.shippingAddress.stateCode,
+        zipCode: formData.shippingAddress.zipCode,
+        countryCode: formData.shippingAddress.countryCode,
+        isDefault: true
+      }
+    ],
+    
+    // Club membership details
+    clubMembership: {
+      clubId: formData.clubId,
+      clubName: formData.clubName,
+      deliveryMethod: formData.deliveryMethod
+    }
+  };
+  
+  // Add billing address if different from shipping
+  if (!formData.billingAddressSame) {
+    customerData.addresses.push({
+      type: 'billing',
+      address: formData.billingAddress.address,
+      address2: formData.billingAddress.address2 || '',
+      city: formData.billingAddress.city,
+      stateCode: formData.billingAddress.stateCode,
+      zipCode: formData.billingAddress.zipCode,
+      countryCode: formData.billingAddress.countryCode,
+      isDefault: false
+    });
+  }
+  
+  return customerData;
+};
+
+/**
+ * Check if a customer already exists in Commerce7
+ * @param {string} email - Customer email address
+ * @returns {Promise<Object|null>} - Customer data if exists, null otherwise
+ */
+export const checkExistingCustomer = async (email) => {
+  try {
+    const response = await api.get(`/api/commerce7/customer/search?email=${encodeURIComponent(email)}`);
+    
+    if (!response.data.customers || response.data.customers.length === 0) {
+      return null;
+    }
+    
+    return response.data.customers[0];
+  } catch (error) {
+    console.error('Error checking existing customer:', error);
+    return null;
   }
 };
 
