@@ -6,7 +6,7 @@ import MessageInput from "./components/MessageInput";
 import LoginForm from "./components/LoginForm";
 import MailingListSignup from "./components/MailingListSignup";
 import MileaMilesReferral from "./components/MileaMilesReferral";
-import WineClubSignup from "./components/WineClubSignUp"; // Import the WineClubSignUp component
+import WineClubSignup from "./components/WineClubSignUp";
 
 const ChatWidget = () => {
   // Modified useMessages hook usage
@@ -43,6 +43,7 @@ const ChatWidget = () => {
     signupComplete,
     clubLevel,
     isWineClubQuery,
+    isSignupInterest,
     handleWineClubQuery,
     startSignupFlow,
     completeSignupFlow,
@@ -60,15 +61,15 @@ const ChatWidget = () => {
   const handleSendMessage = () => {
     if (!input.trim()) return;
     
-    // Check if it's a wine club query
-    if (isWineClubQuery(input)) {
+    // Expand this check to capture more signup intent variations
+    if (isWineClubQuery(input) || isSignupInterest(input)) {
       const result = handleWineClubQuery(input);
       
       // Add the user message
       const updatedMessages = [...messages, { role: "user", content: input }];
       setMessages(updatedMessages);
       
-      // Add bot response
+      // Add bot response with signup button
       setTimeout(() => {
         let responseMessages = [];
         
@@ -78,18 +79,16 @@ const ChatWidget = () => {
           content: result.response 
         });
         
-        // Add signup prompt if applicable
-        if (result.suggestSignup) {
-          responseMessages.push({ 
-            role: "bot", 
-            content: "To join our Wine Club, simply click the button below to start the signup process. It's free to join!",
-            action: {
-              type: "club-signup",
-              text: "Join Wine Club",
-              clubLevel: result.clubLevel
-            }
-          });
-        }
+        // Always add signup prompt for club-related queries
+        responseMessages.push({ 
+          role: "bot", 
+          content: "To join our Wine Club, simply click the button below to start the signup process. It's free to join!",
+          action: {
+            type: "club-signup",
+            text: "Join Wine Club",
+            clubLevel: result.clubLevel
+          }
+        });
         
         setMessages(prev => [...prev, ...responseMessages]);
       }, 500);
@@ -103,7 +102,10 @@ const ChatWidget = () => {
   
   // Handle action button clicks
   const handleActionClick = (action) => {
-    if (action.type === "club-signup") {
+    if (action.type === "external-link") {
+      // Open external link in a new tab
+      window.open(action.url, "_blank", "noopener,noreferrer");
+    } else if (action.type === "club-signup") {
       startSignupFlow(action.clubLevel);
     }
   };

@@ -3,6 +3,7 @@ import { fetchWineData, processChatRequest } from "../services/apiService";
 import { useWineSearch } from "./useWineSearch";
 import { useAuthentication } from "./useAuthentication";
 import { useCustomerQueries } from "./useCustomerQueries";
+import { isReservationQuery } from 'utils/queryHelpers';
 
 export const useMessages = () => {
   const [messages, setMessages] = useState([]);
@@ -58,6 +59,38 @@ export const useMessages = () => {
     // Setup auto-logout when component unmounts or page closes
     return setupAutoLogout();
   }, []);
+  
+  // Add this function to intercept RAG responses related to wine clubs
+  const interceptRagResponse = (response, query) => {
+    // Check if the response is about wine clubs but doesn't include the signup button
+    if (
+      (query.toLowerCase().includes('club') || 
+       query.toLowerCase().includes('membership') || 
+       query.toLowerCase().includes('join')) && 
+      (response.includes('wine club') || 
+       response.includes('membership') || 
+       response.includes('tier')) && 
+      !response.includes('Click the button below')
+    ) {
+      // This appears to be a wine club response without a signup button
+      // Let's add the button to the message list separately
+      setTimeout(() => {
+        setMessages(prev => [
+          ...prev,
+          { 
+            role: "bot", 
+            content: "Would you like to join our wine club now? It's free to sign up!",
+            action: {
+              type: "club-signup",
+              text: "Join Wine Club",
+              clubLevel: null // Let the user select during signup
+            }
+          }
+        ]);
+      }, 500);
+    }
+    return response;
+  };
   
   // Handle login with callback for pending questions
   const handleLogin = async () => {
@@ -147,6 +180,26 @@ export const useMessages = () => {
       let botResponse;
       const userInput = input.toLowerCase();
       
+      // Check for reservation queries
+      if (isReservationQuery(userInput)) {
+        botResponse = "We recommend making reservations online through Tock for the most convenient booking experience. Our tasting experiences can be booked quickly and easily.";
+        
+        // Add a message with a reservation booking action button
+        setMessages(prev => [
+          ...prev, 
+          { 
+            role: "bot", 
+            content: botResponse,
+            action: {
+              type: "external-link",
+              text: "Make Your Reservation Online",
+              url: "https://www.exploretock.com/mileaestatevineyard/"
+            }
+          }
+        ]);
+        return;
+      }
+      
       // *** NEW: Check for referral request first ***
       if (isReferralRequest(userInput)) {
         setShowMilesReferral(true);
@@ -188,7 +241,7 @@ export const useMessages = () => {
           console.log("📡 Sending wine club query to RAG endpoint:", input);
           // Use the processChatRequest function which now calls the RAG endpoint
           const response = await processChatRequest(input);
-          botResponse = response;
+          botResponse = interceptRagResponse(response, input);
         } catch (error) {
           console.error("❌ Error calling RAG endpoint:", error);
           botResponse = "I'm sorry, I couldn't process your request. Please try again later.";
@@ -217,17 +270,19 @@ export const useMessages = () => {
           console.log("📡 Sending query to RAG endpoint:", input);
           // Use the processChatRequest function which now calls the RAG endpoint
           const response = await processChatRequest(input);
-          botResponse = response;
+          botResponse = interceptRagResponse(response, input);
         } catch (error) {
           console.error("❌ Error calling RAG endpoint:", error);
           botResponse = "I'm sorry, I couldn't process your request. Please try again later.";
         }
       }
-      setMessages([...updatedMessages, { role: "bot", content: botResponse }]);
+      
+      // If no special handling occurred, add the bot response to messages
+      setMessages(prev => [...prev, { role: "bot", content: botResponse }]);
     } catch (error) {
       console.error("❌ Error processing request:", error);
-      setMessages([
-        ...updatedMessages,
+      setMessages(prev => [
+        ...prev,
         { role: "bot", content: "⚠️ Sorry, I couldn't process your request. Try again!" }
       ]);
     } finally {

@@ -14,7 +14,7 @@ export const useWineClubSignup = () => {
   const isWineClubQuery = (message) => {
     const lowercaseMsg = message.toLowerCase();
     
-    // Common wine club related terms
+    // Common wine club related terms - expanded list
     const clubTerms = [
       'wine club', 
       'join club', 
@@ -22,7 +22,27 @@ export const useWineClubSignup = () => {
       'wine subscription',
       'monthly wine',
       'quarterly wine',
-      'wine delivery'
+      'wine delivery',
+      'sign up for club',
+      'sign me up',
+      'how do i join',
+      'can i join',
+      'want to join',
+      'wine club membership',
+      'enroll in club',
+      'join the club',
+      'sign up for the club',
+      'join membership',
+      'joining the club',
+      'join wine club',
+      'about the club',
+      'tell me about club',
+      'club information',
+      'club signup',
+      'club sign up',
+      'club benefits',
+      'club perks',
+      'become member'
     ];
     
     return clubTerms.some(term => lowercaseMsg.includes(term));
@@ -46,7 +66,18 @@ export const useWineClubSignup = () => {
       'i\'d like to join',
       'i want to join',
       'how do i join',
-      'how to join'
+      'how to join',
+      'can i join',
+      'would like to join',
+      'interested in joining',
+      'where do i sign up',
+      'ready to join',
+      'sign up today',
+      'want to become a member',
+      'join your club',
+      'sign up for your club',
+      'where can i join',
+      'help me join'
     ];
     
     return signupPhrases.some(phrase => lowercaseMsg.includes(phrase));

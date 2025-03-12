@@ -158,10 +158,11 @@ const formatMembershipData = (formData) => {
     phone: formData.phone,
     password: formData.password,
     
-    // Add addresses
+    // Add addresses with firstName and lastName included
     addresses: [
       {
-        type: 'shipping',
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         address: formData.shippingAddress.address,
         address2: formData.shippingAddress.address2 || '',
         city: formData.shippingAddress.city,
@@ -172,18 +173,20 @@ const formatMembershipData = (formData) => {
       }
     ],
     
-    // Club membership details
+    // Club membership details - only include required fields
     clubMembership: {
       clubId: formData.clubId,
-      clubName: formData.clubName,
       deliveryMethod: formData.deliveryMethod
+      // Do not include status or metaData here
+      // The backend will add signupDate and convert deliveryMethod to orderDeliveryMethod
     }
   };
   
   // Add billing address if different from shipping
   if (!formData.billingAddressSame) {
     customerData.addresses.push({
-      type: 'billing',
+      firstName: formData.firstName,
+      lastName: formData.lastName,
       address: formData.billingAddress.address,
       address2: formData.billingAddress.address2 || '',
       city: formData.billingAddress.city,

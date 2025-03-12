@@ -29,7 +29,15 @@ const MessageList = ({ messages, loading, onActionClick }) => {
               {msg.action && (
                 <div className="mt-3">
                   <button 
-                    onClick={() => onActionClick && onActionClick(msg.action)}
+                    onClick={() => {
+                      if (msg.action.type === "external-link") {
+                        // Open external link in a new tab
+                        window.open(msg.action.url, "_blank", "noopener,noreferrer");
+                      } else if (onActionClick) {
+                        // Existing action click handler
+                        onActionClick(msg.action);
+                      }
+                    }}
                     className="py-2 px-4 bg-[#5A3E00] text-white rounded-md hover:bg-[#483200] transition-colors"
                   >
                     {msg.action.text}

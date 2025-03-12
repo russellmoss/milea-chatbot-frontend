@@ -70,11 +70,7 @@ const WineClubSignup = ({ preSelectedClub = null, onSubmit, onCancel }) => {
     if (preSelectedClub) {
       const club = clubOptions.find(c => c.name.toLowerCase() === preSelectedClub.toLowerCase());
       if (club) {
-        setFormData(prev => ({
-          ...prev,
-          clubId: club.id,
-          clubName: club.name
-        }));
+        
       }
     }
   }, [preSelectedClub]);
@@ -110,12 +106,7 @@ const WineClubSignup = ({ preSelectedClub = null, onSubmit, onCancel }) => {
           if (customer) {
             setIsExistingCustomer(true);
             // Pre-fill form with existing data
-            setFormData(prev => ({
-              ...prev,
-              firstName: customer.firstName || prev.firstName,
-              lastName: customer.lastName || prev.lastName,
-              phone: customer.phone || prev.phone
-            }));
+            
           } else {
             setIsExistingCustomer(false);
           }
@@ -356,10 +347,12 @@ const WineClubSignup = ({ preSelectedClub = null, onSubmit, onCancel }) => {
       <p className="text-amber-700 mb-4">You selected the <span className="font-semibold">{formData.clubName} Club</span></p>
       
       {isExistingCustomer && (
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-          <p className="text-blue-700">We found an existing account with this email. Your information has been pre-filled.</p>
-        </div>
-      )}
+  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+    <p className="text-blue-700">
+      We found an existing account with this email. Please complete the form with your current information.
+    </p>
+  </div>
+)}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
