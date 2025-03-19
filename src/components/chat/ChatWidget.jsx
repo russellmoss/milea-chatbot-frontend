@@ -7,6 +7,8 @@ import LoginForm from "./components/LoginForm";
 import MailingListSignup from "./components/MailingListSignup";
 import MileaMilesReferral from "./components/MileaMilesReferral";
 import WineClubSignup from "./components/WineClubSignUp";
+import SmsContactCard from "./components/SmsContactCard";
+import SmsChat from "./components/SmsChat";
 
 const ChatWidget = () => {
   // Modified useMessages hook usage
@@ -29,7 +31,14 @@ const ChatWidget = () => {
     setShowMailingListSignup,
     handleMailingListSuccess,
     showMilesReferral,
-    setShowMilesReferral
+    setShowMilesReferral,
+    showSmsContactForm,
+    setShowSmsContactForm,
+    activeSmsChat,
+    setActiveSmsChat,
+    handleSmsFormSuccess,
+    handleSmsFormClose,
+    handleSmsChatClose
   } = useMessages();
   
   // Function to add a bot message
@@ -138,32 +147,49 @@ const ChatWidget = () => {
           onSubmit={handleWineClubSuccess}
           onCancel={cancelSignupFlow}
         />
+      ) : showSmsContactForm ? (
+        <SmsContactCard
+          onClose={handleSmsFormClose}
+          onSuccess={handleSmsFormSuccess}
+        />
       ) : (
         <>
-          {/* Add the MileaMilesReferral component when needed */}
-          {showMilesReferral && (
-            <div className="mb-4">
-              <MileaMilesReferral />
-              <button 
-                onClick={() => setShowMilesReferral(false)}
-                className="mt-2 text-sm text-gray-600 hover:text-gray-800"
-              >
-                Close
-              </button>
-            </div>
+          {/* Show SMS Chat if active */}
+          {activeSmsChat ? (
+            <SmsChat
+              phoneNumber={activeSmsChat.phoneNumber}
+              sessionId={activeSmsChat.sessionId}
+              initialHistory={activeSmsChat.history}
+              onClose={handleSmsChatClose}
+            />
+          ) : (
+            <>
+              {/* Add the MileaMilesReferral component when needed */}
+              {showMilesReferral && (
+                <div className="mb-4">
+                  <MileaMilesReferral />
+                  <button 
+                    onClick={() => setShowMilesReferral(false)}
+                    className="mt-2 text-sm text-gray-600 hover:text-gray-800"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+              <MessageInput 
+                input={input}
+                setInput={setInput}
+                sendMessage={handleSendMessage}
+                handleKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                loading={loading}
+              />
+            </>
           )}
-          <MessageInput 
-            input={input}
-            setInput={setInput}
-            sendMessage={handleSendMessage}
-            handleKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            loading={loading}
-          />
         </>
       )}
     </div>

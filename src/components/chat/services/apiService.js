@@ -279,4 +279,57 @@ export const fetchBusinessHours = async () => {
   }
 };
 
+/**
+ * Initiate an SMS conversation
+ * @param {Object} contactData - Contact information
+ * @param {string} contactData.firstName - First name
+ * @param {string} contactData.lastName - Last name
+ * @param {string} contactData.email - Email address (optional)
+ * @param {string} contactData.phoneNumber - Phone number
+ * @param {string} contactData.birthdate - Birthdate (optional)
+ * @param {string} contactData.message - Initial message
+ * @param {string} contactData.sessionId - Unique session ID
+ * @returns {Promise<Object>} - API response
+ */
+export const initiateSmsConversation = async (contactData) => {
+  try {
+    const response = await api.post('/api/twilio/initiate', contactData);
+    return response.data;
+  } catch (error) {
+    console.error('Error initiating SMS conversation:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send an SMS message
+ * @param {string} phoneNumber - Recipient's phone number
+ * @param {string} message - Message content
+ * @returns {Promise<Object>} - API response
+ */
+export const sendSmsMessage = async (phoneNumber, message) => {
+  try {
+    const response = await api.post('/api/twilio/send', { phoneNumber, message });
+    return response.data;
+  } catch (error) {
+    console.error('Error sending SMS message:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch SMS conversation history
+ * @param {string} phoneNumber - Phone number to fetch history for
+ * @returns {Promise<Object>} - API response with message history
+ */
+export const fetchSmsHistory = async (phoneNumber) => {
+  try {
+    const response = await api.get(`/api/twilio/history/${phoneNumber}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching SMS history:', error);
+    throw error;
+  }
+};
+
 export default api;

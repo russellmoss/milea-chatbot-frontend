@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchWineData, processChatRequest } from "../services/apiService";
+import { fetchWineData, processChatRequest, initiateSmsConversation, sendSmsMessage } from "../services/apiService";
 import { useWineSearch } from "./useWineSearch";
 import { useAuthentication } from "./useAuthentication";
 import { useCustomerQueries } from "./useCustomerQueries";
@@ -13,6 +13,9 @@ export const useMessages = () => {
   const [showMailingListSignup, setShowMailingListSignup] = useState(false);
   // New state for showing the Miles referral component
   const [showMilesReferral, setShowMilesReferral] = useState(false);
+  // Add new state for SMS functionality
+  const [showSmsContactForm, setShowSmsContactForm] = useState(false);
+  const [activeSmsChat, setActiveSmsChat] = useState(null);
   
   const { 
     formatProductData, 
@@ -168,6 +171,48 @@ export const useMessages = () => {
     return referralPatterns.some(pattern => textLower.includes(pattern));
   };
   
+  // Add function to check for SMS-related requests
+  const isSmsRequest = (text) => {
+    const textLower = text.toLowerCase();
+    const smsPatterns = [
+      'text us',
+      'text you',
+      'send you a text',
+      'send a text',
+      'text message',
+      'sms',
+      'message you',
+      'message the winery',
+      'contact via text',
+      'text contact'
+    ];
+    
+    return smsPatterns.some(pattern => textLower.includes(pattern));
+  };
+
+  // Add handler functions for SMS
+  const handleSmsFormSuccess = (data) => {
+    setMessages(prev => [
+      ...prev,
+      { role: "bot", content: `✅ Thanks for reaching out! We've received your message and will respond to ${data.phoneNumber} shortly.` }
+    ]);
+    
+    setShowSmsContactForm(false);
+    setActiveSmsChat({
+      phoneNumber: data.phoneNumber,
+      sessionId: data.sessionId,
+      history: data.history
+    });
+  };
+
+  const handleSmsFormClose = () => {
+    setShowSmsContactForm(false);
+  };
+
+  const handleSmsChatClose = () => {
+    setActiveSmsChat(null);
+  };
+
   // Message sending logic
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -180,8 +225,13 @@ export const useMessages = () => {
       let botResponse;
       const userInput = input.toLowerCase();
       
+      // Check for SMS requests
+      if (isSmsRequest(userInput)) {
+        setShowSmsContactForm(true);
+        botResponse = "I'd be happy to help you send us a text message. Please fill out the form below:";
+      }
       // Check for reservation queries
-      if (isReservationQuery(userInput)) {
+      else if (isReservationQuery(userInput)) {
         botResponse = "We recommend making reservations online through Tock for the most convenient booking experience. Our tasting experiences can be booked quickly and easily.";
         
         // Add a message with a reservation booking action button
@@ -278,7 +328,9 @@ export const useMessages = () => {
       }
       
       // If no special handling occurred, add the bot response to messages
-      setMessages(prev => [...prev, { role: "bot", content: botResponse }]);
+      if (botResponse) {
+        setMessages(prev => [...prev, { role: "bot", content: botResponse }]);
+      }
     } catch (error) {
       console.error("❌ Error processing request:", error);
       setMessages(prev => [
@@ -328,6 +380,14 @@ export const useMessages = () => {
     handleMailingListSuccess,
     // Add new state for Miles referral
     showMilesReferral,
-    setShowMilesReferral
+    setShowMilesReferral,
+    // Add new SMS-related state and handlers
+    showSmsContactForm,
+    setShowSmsContactForm,
+    activeSmsChat,
+    setActiveSmsChat,
+    handleSmsFormSuccess,
+    handleSmsFormClose,
+    handleSmsChatClose
   };
 };
