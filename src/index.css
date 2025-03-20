@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-family: Inter, system-ui, sans-serif;
+  }
+}
+
 body {
   font-family: "Gilda Display", serif;
   background-color: #D8D1AE;

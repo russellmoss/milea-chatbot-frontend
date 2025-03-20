@@ -3,7 +3,7 @@ import { fetchWineData, processChatRequest, initiateSmsConversation, sendSmsMess
 import { useWineSearch } from "./useWineSearch";
 import { useAuthentication } from "./useAuthentication";
 import { useCustomerQueries } from "./useCustomerQueries";
-import { isReservationQuery } from 'utils/queryHelpers';
+import { isReservationQuery } from '../utils/queryHelpers';
 
 export const useMessages = () => {
   const [messages, setMessages] = useState([]);
