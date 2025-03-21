@@ -332,4 +332,49 @@ export const fetchSmsHistory = async (phoneNumber) => {
   }
 };
 
+/**
+ * Submit user feedback
+ * @param {Object} feedbackData - Feedback data including rating and comments
+ * @returns {Promise<Object>} - API response
+ */
+export const submitFeedback = async (feedbackData) => {
+  try {
+    const response = await api.post("/api/feedback", feedbackData);
+    return response.data;
+  } catch (error) {
+    console.error("Error submitting feedback:", error);
+    throw new Error("Failed to submit feedback");
+  }
+};
+
+/**
+ * Track user interaction for analytics
+ * @param {Object} interactionData - Interaction data including type and details
+ * @returns {Promise<Object>} - API response
+ */
+export const trackInteraction = async (interactionData) => {
+  try {
+    const response = await api.post("/api/analytics/interaction", interactionData);
+    return response.data;
+  } catch (error) {
+    console.error("Error tracking interaction:", error);
+    throw new Error("Failed to track interaction");
+  }
+};
+
+/**
+ * Track chat session metrics
+ * @param {Object} sessionData - Session data including duration and message count
+ * @returns {Promise<Object>} - API response
+ */
+export const trackSessionMetrics = async (sessionData) => {
+  try {
+    const response = await api.post("/api/analytics/session", sessionData);
+    return response.data;
+  } catch (error) {
+    console.error("Error tracking session metrics:", error);
+    throw new Error("Failed to track session metrics");
+  }
+};
+
 export default api;

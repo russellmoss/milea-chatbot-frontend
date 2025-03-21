@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { fetchWineData, processChatRequest, initiateSmsConversation, sendSmsMessage } from "../services/apiService";
+import { fetchWineData, processChatRequest, initiateSmsConversation, sendSmsMessage, submitFeedback } from "../services/apiService";
 import { useWineSearch } from "./useWineSearch";
 import { useAuthentication } from "./useAuthentication";
 import { useCustomerQueries } from "./useCustomerQueries";
 import { isReservationQuery } from '../utils/queryHelpers';
+import { analyticsService } from '../services/analyticsService';
 
 export const useMessages = () => {
   const [messages, setMessages] = useState([]);
@@ -61,6 +62,13 @@ export const useMessages = () => {
     
     // Setup auto-logout when component unmounts or page closes
     return setupAutoLogout();
+  }, []);
+  
+  // Add cleanup effect for analytics
+  useEffect(() => {
+    return () => {
+      analyticsService.trackSessionEnd();
+    };
   }, []);
   
   // Add this function to intercept RAG responses related to wine clubs
@@ -218,6 +226,10 @@ export const useMessages = () => {
     if (!input.trim()) return;
     const updatedMessages = [...messages, { role: "user", content: input }];
     setMessages(updatedMessages);
+    
+    // Track user message
+    analyticsService.trackMessage(input, 'user');
+    
     setInput("");
     setLoading(true);
     
@@ -327,16 +339,17 @@ export const useMessages = () => {
         }
       }
       
-      // If no special handling occurred, add the bot response to messages
+      // Track bot response
       if (botResponse) {
-        setMessages(prev => [...prev, { role: "bot", content: botResponse }]);
+        analyticsService.trackMessage(botResponse, 'bot');
       }
+      
+      setMessages(prev => [...prev, { role: "bot", content: botResponse }]);
     } catch (error) {
-      console.error("❌ Error processing request:", error);
-      setMessages(prev => [
-        ...prev,
-        { role: "bot", content: "⚠️ Sorry, I couldn't process your request. Try again!" }
-      ]);
+      console.error("Error processing message:", error);
+      const errorMessage = "I'm having trouble processing your request. Please try again.";
+      analyticsService.trackMessage(errorMessage, 'bot');
+      setMessages(prev => [...prev, { role: "bot", content: errorMessage }]);
     } finally {
       setLoading(false);
     }
@@ -357,6 +370,24 @@ export const useMessages = () => {
       ...prev,
       { role: "bot", content: "You have been logged out successfully." }
     ]);
+  };
+
+  // Add feedback handling
+  const handleFeedback = async (rating, comment) => {
+    try {
+      await submitFeedback({ rating, comment });
+      analyticsService.trackFeedback(rating, comment);
+      setMessages(prev => [
+        ...prev,
+        { role: "bot", content: "Thank you for your feedback! We appreciate your input." }
+      ]);
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      setMessages(prev => [
+        ...prev,
+        { role: "bot", content: "Sorry, we couldn't submit your feedback. Please try again later." }
+      ]);
+    }
   };
 
   return {
@@ -388,6 +419,7 @@ export const useMessages = () => {
     setActiveSmsChat,
     handleSmsFormSuccess,
     handleSmsFormClose,
-    handleSmsChatClose
+    handleSmsChatClose,
+    handleFeedback
   };
 };
