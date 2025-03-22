@@ -16,10 +16,19 @@ const api = axios.create({
 // Add a request interceptor to include auth token if available
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("commerce7Token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Check if the endpoint is public (no auth required)
+    const isPublicEndpoint = config.url.startsWith('/api/health') || 
+                           config.url.startsWith('/api/analytics') || 
+                           config.url.startsWith('/api/feedback');
+
+    // Only add auth token for non-public endpoints
+    if (!isPublicEndpoint) {
+      const token = localStorage.getItem("commerce7Token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
+
     return config;
   },
   (error) => {
@@ -335,11 +344,36 @@ export const fetchSmsHistory = async (phoneNumber) => {
 /**
  * Submit user feedback
  * @param {Object} feedbackData - Feedback data including rating and comments
+ * @param {string} feedbackData.messageId - ID of the message being rated
+ * @param {string} feedbackData.conversationId - ID of the conversation
+ * @param {number} feedbackData.rating - Rating from 1-5
+ * @param {string} feedbackData.comment - User's feedback comment
  * @returns {Promise<Object>} - API response
  */
 export const submitFeedback = async (feedbackData) => {
   try {
-    const response = await api.post("/api/feedback", feedbackData);
+    // Validate required fields
+    if (!feedbackData.messageId || !feedbackData.rating) {
+      throw new Error('Message ID and rating are required');
+    }
+
+    // Ensure rating is a number
+    const rating = Number(feedbackData.rating);
+    if (isNaN(rating) || rating < 1 || rating > 5) {
+      throw new Error('Rating must be a number between 1 and 5');
+    }
+
+    // Prepare the request data
+    const requestData = {
+      messageId: String(feedbackData.messageId),
+      conversationId: String(feedbackData.conversationId),
+      rating: rating,
+      comment: feedbackData.comment ? String(feedbackData.comment).trim() : "",
+      tags: Array.isArray(feedbackData.tags) ? feedbackData.tags : []
+    };
+
+    console.log('Submitting feedback with data:', requestData);
+    const response = await api.post("/api/feedback", requestData);
     return response.data;
   } catch (error) {
     console.error("Error submitting feedback:", error);
@@ -350,11 +384,19 @@ export const submitFeedback = async (feedbackData) => {
 /**
  * Track user interaction for analytics
  * @param {Object} interactionData - Interaction data including type and details
+ * @param {string} interactionData.type - Type of interaction
+ * @param {Object} interactionData.details - Additional interaction details
+ * @param {string} interactionData.sessionId - Unique session identifier
  * @returns {Promise<Object>} - API response
  */
 export const trackInteraction = async (interactionData) => {
   try {
-    const response = await api.post("/api/analytics/interaction", interactionData);
+    const response = await api.post("/api/analytics/interaction", {
+      ...interactionData,
+      sessionId: localStorage.getItem("sessionId") || generateSessionId(),
+      userId: localStorage.getItem("customerId") || null,
+      timestamp: new Date().toISOString()
+    });
     return response.data;
   } catch (error) {
     console.error("Error tracking interaction:", error);
@@ -365,16 +407,40 @@ export const trackInteraction = async (interactionData) => {
 /**
  * Track chat session metrics
  * @param {Object} sessionData - Session data including duration and message count
+ * @param {number} sessionData.duration - Session duration in milliseconds
+ * @param {number} sessionData.messageCount - Total number of messages
+ * @param {number} sessionData.interactionCount - Total number of interactions
+ * @param {Array} sessionData.interactions - Array of interaction objects
  * @returns {Promise<Object>} - API response
  */
 export const trackSessionMetrics = async (sessionData) => {
   try {
-    const response = await api.post("/api/analytics/session", sessionData);
+    const sessionId = localStorage.getItem("sessionId") || generateSessionId();
+    const metrics = {
+      ...sessionData,
+      sessionId,
+      userId: localStorage.getItem("customerId") || null,
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('Tracking session metrics:', metrics);
+    const response = await api.post("/api/analytics/session", metrics);
     return response.data;
   } catch (error) {
-    console.error("Error tracking session metrics:", error);
-    throw new Error("Failed to track session metrics");
+    // Log the error but don't throw it to prevent blocking other functionality
+    console.warn('Error tracking session metrics:', error.message);
+    // Don't rethrow the error
   }
+};
+
+/**
+ * Generate a unique session ID
+ * @returns {string} - Unique session identifier
+ */
+const generateSessionId = () => {
+  const sessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+  localStorage.setItem("sessionId", sessionId);
+  return sessionId;
 };
 
 export default api;

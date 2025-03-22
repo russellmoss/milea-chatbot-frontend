@@ -1,197 +1,87 @@
 import React, { useEffect } from "react";
-import { useMessages } from "./hooks/useMessages";
-import { useWineClubSignup } from "./hooks/useWineClubSignup";
 import MessageList from "./components/MessageList";
 import MessageInput from "./components/MessageInput";
-import LoginForm from "./components/LoginForm";
-import MailingListSignup from "./components/MailingListSignup";
-import MileaMilesReferral from "./components/MileaMilesReferral";
-import WineClubSignup from "./components/WineClubSignUp";
+import WineClubSignUp from "./components/WineClubSignUp";
+import MilesReferral from "./components/MilesReferral";
 import SmsContactCard from "./components/SmsContactCard";
 import SmsChat from "./components/SmsChat";
+import { useMessages } from "./hooks/useMessages";
 
 const ChatWidget = () => {
-  // Modified useMessages hook usage
-  const { 
-    messages, 
+  const {
+    messages,
     setMessages,
-    loading, 
-    input, 
-    setInput, 
-    sendMessage: originalSendMessage, 
+    input,
+    setInput,
+    loading,
+    sendMessage,
     handleKeyDown,
-    showLoginForm,
-    handleLogin,
-    email,
-    setEmail,
-    password,
-    setPassword,
-    loginLoading,
-    showMailingListSignup,
-    setShowMailingListSignup,
-    handleMailingListSuccess,
+    showWineClubSignup,
+    setShowWineClubSignup,
     showMilesReferral,
     setShowMilesReferral,
+    signupComplete,
     showSmsContactForm,
     setShowSmsContactForm,
     activeSmsChat,
     setActiveSmsChat,
     handleSmsFormSuccess,
     handleSmsFormClose,
-    handleSmsChatClose
+    handleSmsChatClose,
+    handleFeedback
   } = useMessages();
-  
-  // Function to add a bot message
-  const addBotMessage = (message) => {
-    setMessages(prev => [...prev, { role: "bot", content: message }]);
-  };
-  
-  // Add wine club signup integration
-  const {
-    showSignupForm,
-    signupComplete,
-    clubLevel,
-    isWineClubQuery,
-    isSignupInterest,
-    handleWineClubQuery,
-    startSignupFlow,
-    completeSignupFlow,
-    cancelSignupFlow
-  } = useWineClubSignup();
-  
-  // Handle successful wine club signup
-  const handleWineClubSuccess = (data) => {
-    // Add a confirmation message to the chat
-    addBotMessage(`Thank you for joining the ${data.clubName} Club! Your membership application has been submitted. A member of our team will call you to finalize your membership. Welcome to the Milea Family! 🍷`);
-    completeSignupFlow();
-  };
-  
-  // Extend the sendMessage function to handle wine club queries
-  const handleSendMessage = () => {
-    if (!input.trim()) return;
-    
-    // Expand this check to capture more signup intent variations
-    if (isWineClubQuery(input) || isSignupInterest(input)) {
-      const result = handleWineClubQuery(input);
-      
-      // Add the user message
-      const updatedMessages = [...messages, { role: "user", content: input }];
-      setMessages(updatedMessages);
-      
-      // Add bot response with signup button
-      setTimeout(() => {
-        let responseMessages = [];
-        
-        // Add main response
-        responseMessages.push({ 
-          role: "bot", 
-          content: result.response 
-        });
-        
-        // Always add signup prompt for club-related queries
-        responseMessages.push({ 
-          role: "bot", 
-          content: "To join our Wine Club, simply click the button below to start the signup process. It's free to join!",
-          action: {
-            type: "club-signup",
-            text: "Join Wine Club",
-            clubLevel: result.clubLevel
-          }
-        });
-        
-        setMessages(prev => [...prev, ...responseMessages]);
-      }, 500);
-      
-      setInput("");
-    } else {
-      // Process normal message
-      originalSendMessage();
+
+  useEffect(() => {
+    // Scroll to bottom when messages change
+    const messageContainer = document.querySelector(".message-container");
+    if (messageContainer) {
+      messageContainer.scrollTop = messageContainer.scrollHeight;
     }
-  };
-  
-  // Handle action button clicks
-  const handleActionClick = (action) => {
-    if (action.type === "external-link") {
-      // Open external link in a new tab
-      window.open(action.url, "_blank", "noopener,noreferrer");
-    } else if (action.type === "club-signup") {
-      startSignupFlow(action.clubLevel);
-    }
-  };
+  }, [messages]);
 
   return (
-    <div className="w-full bg-[#EFE8D4] shadow-lg rounded-lg p-6 border border-[#5A3E00]">
-      <MessageList 
-        messages={messages} 
-        loading={loading} 
-        onActionClick={handleActionClick}
-      />
-      
-      {showLoginForm ? (
-        <LoginForm 
-          email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          handleLogin={handleLogin}
-          loading={loginLoading}
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto message-container p-4">
+        <MessageList 
+          messages={messages} 
+          onFeedbackClick={handleFeedback}
         />
-      ) : showMailingListSignup ? (
-        <MailingListSignup 
-          onClose={() => setShowMailingListSignup(false)}
-          onSuccess={handleMailingListSuccess}
+        {showWineClubSignup && (
+          <WineClubSignUp
+            onClose={() => setShowWineClubSignup(false)}
+            onSuccess={() => {
+              setShowWineClubSignup(false);
+              setShowMilesReferral(true);
+            }}
+          />
+        )}
+        {showMilesReferral && (
+          <MilesReferral
+            onClose={() => setShowMilesReferral(false)}
+          />
+        )}
+        {showSmsContactForm && (
+          <SmsContactCard
+            onSuccess={handleSmsFormSuccess}
+            onClose={handleSmsFormClose}
+          />
+        )}
+        {activeSmsChat && (
+          <SmsChat
+            chat={activeSmsChat}
+            onClose={handleSmsChatClose}
+          />
+        )}
+      </div>
+      <div className="p-4 border-t">
+        <MessageInput
+          input={input}
+          setInput={setInput}
+          sendMessage={sendMessage}
+          handleKeyDown={handleKeyDown}
+          loading={loading}
         />
-      ) : showSignupForm ? (
-        <WineClubSignup 
-          preSelectedClub={clubLevel}
-          onSubmit={handleWineClubSuccess}
-          onCancel={cancelSignupFlow}
-        />
-      ) : showSmsContactForm ? (
-        <SmsContactCard
-          onClose={handleSmsFormClose}
-          onSuccess={handleSmsFormSuccess}
-        />
-      ) : (
-        <>
-          {/* Show SMS Chat if active */}
-          {activeSmsChat ? (
-            <SmsChat
-              phoneNumber={activeSmsChat.phoneNumber}
-              sessionId={activeSmsChat.sessionId}
-              initialHistory={activeSmsChat.history}
-              onClose={handleSmsChatClose}
-            />
-          ) : (
-            <>
-              {/* Add the MileaMilesReferral component when needed */}
-              {showMilesReferral && (
-                <div className="mb-4">
-                  <MileaMilesReferral />
-                  <button 
-                    onClick={() => setShowMilesReferral(false)}
-                    className="mt-2 text-sm text-gray-600 hover:text-gray-800"
-                  >
-                    Close
-                  </button>
-                </div>
-              )}
-              <MessageInput 
-                input={input}
-                setInput={setInput}
-                sendMessage={handleSendMessage}
-                handleKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                loading={loading}
-              />
-            </>
-          )}
-        </>
-      )}
+      </div>
     </div>
   );
 };

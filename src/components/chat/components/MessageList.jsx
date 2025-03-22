@@ -1,6 +1,7 @@
 import React from "react";
 import MileaMilesReferral from "./MileaMilesReferral";
 import parseMarkdown from "../utils/markdownParser";
+import { ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 
 /**
  * Component to display the list of messages
@@ -8,8 +9,20 @@ import parseMarkdown from "../utils/markdownParser";
  * @param {Array} props.messages - List of message objects
  * @param {boolean} props.loading - Whether a message is being loaded
  * @param {Function} props.onActionClick - Function to handle action button clicks
+ * @param {Function} props.onFeedbackClick - Function to handle feedback button clicks
  */
-const MessageList = ({ messages, loading, onActionClick }) => {
+const MessageList = ({ messages = [], loading = false, onActionClick, onFeedbackClick }) => {
+  if (!Array.isArray(messages)) {
+    console.warn('MessageList received invalid messages prop:', messages);
+    return (
+      <div className="h-96 overflow-y-auto border-b pb-4 flex flex-col space-y-3">
+        <div className="bot-message bg-[#F9F4E9] text-[#5A3E00] p-3 rounded-lg mr-12">
+          No messages to display.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-96 overflow-y-auto border-b pb-4 flex flex-col space-y-3">
       {messages.map((msg, index) => (
@@ -17,7 +30,7 @@ const MessageList = ({ messages, loading, onActionClick }) => {
           key={index} 
           className={`chat-bubble ${
             msg.role === "user" ? "user-message bg-[#715100] text-white text-right ml-12" : "bot-message bg-[#F9F4E9] text-[#5A3E00] mr-12"
-          } p-3 rounded-lg`}
+          } p-3 rounded-lg relative`}
         >
           {msg.component === "MileaMilesReferral" ? (
             <MileaMilesReferral />
@@ -43,6 +56,17 @@ const MessageList = ({ messages, loading, onActionClick }) => {
                     {msg.action.text}
                   </button>
                 </div>
+              )}
+
+              {/* Add feedback button for bot messages */}
+              {msg.role === "bot" && !msg.feedbackSubmitted && (
+                <button
+                  onClick={() => onFeedbackClick(index)}
+                  className="absolute -right-2 -bottom-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                  title="Provide feedback"
+                >
+                  <ChatBubbleLeftIcon className="h-4 w-4 text-gray-600" />
+                </button>
               )}
             </>
           )}

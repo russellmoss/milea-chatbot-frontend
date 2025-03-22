@@ -1,49 +1,38 @@
 import React from 'react';
-import MessageFeedback from './MessageFeedback';
+import MessageFeedback from './components/MessageFeedback';
+import { useMessages } from './hooks/useMessages';
 
-const MessageList = ({ messages, loading }) => {
-  // Get or create conversation ID
-  const conversationId = localStorage.getItem('conversationId') || `conv_${Date.now()}`;
-  
-  // Store conversation ID if not already stored
-  if (!localStorage.getItem('conversationId')) {
-    localStorage.setItem('conversationId', conversationId);
-  }
+const MessageList = () => {
+  const { messages, handleFeedback } = useMessages();
 
   return (
-    <div className="flex flex-col space-y-4 p-4">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4">
       {messages.map((msg, index) => (
         <div
-          key={index}
-          className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          key={msg.id || `msg_${Date.now()}_${index}`}
+          className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
         >
           <div
             className={`max-w-[80%] rounded-lg p-3 ${
-              msg.role === 'user'
-                ? 'bg-[#715100] text-white'
-                : 'bg-[#F9F4E9] text-[#5A3E00]'
+              msg.isUser
+                ? 'bg-[#5A3E00] text-white'
+                : 'bg-gray-100 text-gray-900'
             }`}
           >
-            <div className="prose prose-sm">{msg.content}</div>
-            
-            {/* Add feedback component for bot messages */}
-            {msg.role === 'bot' && (
+            <div className="whitespace-pre-wrap">{msg.content}</div>
+            {!msg.isUser && !msg.feedbackSubmitted && (
               <MessageFeedback
                 messageId={msg.id || `msg_${Date.now()}_${index}`}
-                conversationId={conversationId}
+                conversationId={msg.conversationId || `conv_${Date.now()}`}
+                onSubmit={handleFeedback}
+                onClose={() => {
+                  // Handle closing the feedback form if needed
+                }}
               />
             )}
           </div>
         </div>
       ))}
-      
-      {loading && (
-        <div className="flex justify-start">
-          <div className="bg-[#F9F4E9] text-[#5A3E00] rounded-lg p-3 max-w-[80%]">
-            <div className="animate-pulse">Thinking...</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -373,20 +373,25 @@ export const useMessages = () => {
   };
 
   // Add feedback handling
-  const handleFeedback = async (rating, comment) => {
+  const handleFeedback = async (feedbackData) => {
     try {
-      await submitFeedback({ rating, comment });
-      analyticsService.trackFeedback(rating, comment);
-      setMessages(prev => [
-        ...prev,
-        { role: "bot", content: "Thank you for your feedback! We appreciate your input." }
-      ]);
+      // Submit feedback to the API
+      await submitFeedback(feedbackData);
+
+      // Update the message to show feedback was submitted
+      setMessages(prev => prev.map(msg => 
+        msg.id === feedbackData.messageId
+          ? { ...msg, feedbackSubmitted: true }
+          : msg
+      ));
+
+      // Track feedback in analytics
+      analyticsService.trackFeedback(feedbackData.rating, feedbackData.comment);
+      
+      return true;
     } catch (error) {
       console.error("Error submitting feedback:", error);
-      setMessages(prev => [
-        ...prev,
-        { role: "bot", content: "Sorry, we couldn't submit your feedback. Please try again later." }
-      ]);
+      throw error;
     }
   };
 

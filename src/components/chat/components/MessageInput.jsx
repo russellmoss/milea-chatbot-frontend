@@ -9,13 +9,22 @@ import React from "react";
  * @param {Function} props.handleKeyDown - Function to handle keyboard events
  * @param {boolean} props.loading - Whether a message is being processed
  */
-const MessageInput = ({ input, setInput, sendMessage, handleKeyDown, loading }) => {
+const MessageInput = ({ 
+  input = "", // Add default value
+  setInput = () => {}, // Add default function
+  sendMessage = () => {}, // Add default function
+  handleKeyDown = () => {}, // Add default function
+  loading = false // Add default value
+}) => {
+  // Ensure input is a string
+  const inputValue = String(input || "");
+  
   return (
     <div className="flex mt-3">
       <input
         type="text"
         className="flex-1 border p-3 rounded-l bg-[#F9F4E9] text-[#715100] placeholder-[#715100] text-lg"
-        value={input}
+        value={inputValue}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Ask about our wines..."
@@ -24,7 +33,7 @@ const MessageInput = ({ input, setInput, sendMessage, handleKeyDown, loading }) 
       <button
         onClick={sendMessage}
         className={`bg-[#5A3E00] text-white p-3 rounded-r hover:bg-[#3D2900] text-lg ${loading ? 'opacity-50' : ''}`}
-        disabled={loading || !input.trim()}
+        disabled={loading || !inputValue.trim()}
       >
         {loading ? "..." : "Send"}
       </button>
