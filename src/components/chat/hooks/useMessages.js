@@ -5,8 +5,14 @@ import { useAuthentication } from "./useAuthentication";
 import { useCustomerQueries } from "./useCustomerQueries";
 import { isReservationQuery } from '../utils/queryHelpers';
 import { analyticsService } from '../services/analyticsService';
+import { generateMessageData, storeMessage } from "../services/messageStore";
+import { getClientIp } from "../services/getClientIp";
+import { beginConversation } from "../services/conversation";
+import { useWebSocket } from "./useWebsocket";
+
 
 export const useMessages = () => {
+  const [sessionId, setSessionId] = useState('');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,6 +23,35 @@ export const useMessages = () => {
   // Add new state for SMS functionality
   const [showSmsContactForm, setShowSmsContactForm] = useState(false);
   const [activeSmsChat, setActiveSmsChat] = useState(null);
+
+
+  // Initialize session ID for the conversation
+  useEffect(() => {
+    getClientIp().then(ip => {
+      beginConversation(ip || 'unknown').then(response => {
+        setSessionId(response.data.sessionId);
+      });
+    });
+  }, []);
+
+  // Call useWebSocket at the top level, passing sessionId, no worry if sessionId is empty initially
+  useWebSocket(sessionId);
+
+  // whenever messages updated, store then into db
+  useEffect(() => {
+    if (messages.length > 0 && sessionId) {
+      // Store messages in the database
+      const messageData = generateMessageData(messages[messages.length - 1], sessionId);
+      console.log("Generated message data:", messageData);
+      storeMessage(messageData)
+        .then(() => {
+          console.log("Message stored successfully:", messageData);
+        })
+        .catch((error) => {
+          console.error("Error storing message:", error);
+        });
+    }
+  }, [messages, sessionId]);
   
   const { 
     formatProductData, 
