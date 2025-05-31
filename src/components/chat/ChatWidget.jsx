@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { use, useEffect } from "react";
 import MessageList from "./components/MessageList";
 import MessageInput from "./components/MessageInput";
 import WineClubSignUp from "./components/WineClubSignUp";
@@ -6,6 +6,8 @@ import MilesReferral from "./components/MilesReferral";
 import SmsContactCard from "./components/SmsContactCard";
 import SmsChat from "./components/SmsChat";
 import { useMessages } from "./hooks/useMessages";
+import { PositiveMessageFeedbackWidget } from "../../components/chat/components/MessageFeedbackWidget";
+
 
 const ChatWidget = () => {
   const {
@@ -28,7 +30,9 @@ const ChatWidget = () => {
     handleSmsFormSuccess,
     handleSmsFormClose,
     handleSmsChatClose,
-    handleFeedback
+    handleFeedback,
+    showFeedbackWidget,
+    setShowFeedbackWidget
   } = useMessages();
 
   useEffect(() => {
@@ -38,6 +42,15 @@ const ChatWidget = () => {
       messageContainer.scrollTop = messageContainer.scrollHeight;
     }
   }, [messages]);
+
+  // Show the positive feedback modal when the feedback widget is triggered
+  useEffect(() => {
+    if (showFeedbackWidget) {
+      if (showFeedbackWidget?.type === 'upvote') {
+        document.getElementById('positive_feedback_modal').showModal();
+      }
+    }
+  }, [showFeedbackWidget]);
 
   return (
     <div className="flex flex-col h-full">
@@ -82,6 +95,7 @@ const ChatWidget = () => {
           loading={loading}
         />
       </div>
+      {showFeedbackWidget && <PositiveMessageFeedbackWidget messageInfo={showFeedbackWidget} />}
     </div>
   );
 };

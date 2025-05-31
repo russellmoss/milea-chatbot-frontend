@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchWineData, processChatRequest, initiateSmsConversation, sendSmsMessage, submitFeedback } from "../services/apiService";
+import api, { fetchWineData, processChatRequest, initiateSmsConversation, sendSmsMessage, submitFeedback } from "../services/apiService";
 import { useWineSearch } from "./useWineSearch";
 import { useAuthentication } from "./useAuthentication";
 import { useCustomerQueries } from "./useCustomerQueries";
@@ -9,6 +9,7 @@ import { generateMessageData, storeMessage } from "../services/messageStore";
 import { getClientIp } from "../services/getClientIp";
 import { beginConversation } from "../services/conversation";
 import { useWebSocket } from "./useWebsocket";
+import { generateUUID } from "../utils/uuidGenerator";
 
 
 export const useMessages = () => {
@@ -23,6 +24,8 @@ export const useMessages = () => {
   // Add new state for SMS functionality
   const [showSmsContactForm, setShowSmsContactForm] = useState(false);
   const [activeSmsChat, setActiveSmsChat] = useState(null);
+  // State for telling if the feedback widget is shown
+  const [showFeedbackWidget, setShowFeedbackWidget] = useState({ type: "", messageId: null });
 
 
   // Initialize session ID for the conversation
@@ -84,9 +87,11 @@ export const useMessages = () => {
   // Add initialization message and check for existing login
   useEffect(() => {
     setMessages([
-      { 
+      {
+        id: generateUUID(), 
         role: "bot", 
-        content: "👋 Hello! I'm your Milea Wine assistant. Ask me about our wines, club memberships, check your Milea Miles balance, send free tastings or join our mailing list by typing 'subscribe'."
+        content: "👋 Hello! I'm your Milea Wine assistant. Ask me about our wines, club memberships, check your Milea Miles balance, send free tastings or join our mailing list by typing 'subscribe'.",
+        action: null
       }
     ]);
     
@@ -124,6 +129,7 @@ export const useMessages = () => {
         setMessages(prev => [
           ...prev,
           { 
+            id: generateUUID(),
             role: "bot", 
             content: "Would you like to join our wine club now? It's free to sign up!",
             action: {
@@ -145,19 +151,19 @@ export const useMessages = () => {
       async (customerInfo) => {
         setMessages(prev => [
           ...prev, 
-          { role: "bot", content: `✅ Login successful! Welcome back, ${customerInfo.firstName || 'valued customer'}. I can now provide information about your account.` }
+          { id: generateUUID(), role: "bot", content: `✅ Login successful! Welcome back, ${customerInfo.firstName || 'valued customer'}. I can now provide information about your account.`, action: null }
         ]);
         
         // Process pending question if any
         if (pendingQuestion) {
           try {
             const response = await processAuthenticatedQuestion(pendingQuestion, customerInfo);
-            setMessages(prev => [...prev, { role: "bot", content: response }]);
+            setMessages(prev => [...prev, { id: generateUUID(), role: "bot", content: response, action: null }]);
           } catch (error) {
             console.error("Error processing authenticated question:", error);
             setMessages(prev => [
               ...prev, 
-              { role: "bot", content: "I'm sorry, but I encountered an error while retrieving your account information. Please try asking your question again." }
+              { id: generateUUID(), role: "bot", content: "I'm sorry, but I encountered an error while retrieving your account information. Please try asking your question again.", action: null }
             ]);
           }
           setPendingQuestion(null);
@@ -167,7 +173,7 @@ export const useMessages = () => {
       (errorMessage) => {
         setMessages(prev => [
           ...prev, 
-          { role: "bot", content: `❌ Login failed. ${errorMessage || 'Please check your email and password and try again.'}` }
+          { id: generateUUID(), role: "bot", content: `❌ Login failed. ${errorMessage || 'Please check your email and password and try again.'}`, action: null }
         ]);
         
         // Reset the login form state after a short delay
@@ -183,7 +189,7 @@ export const useMessages = () => {
   const handleMailingListSuccess = (successMessage) => {
     setMessages(prev => [
       ...prev,
-      { role: "bot", content: `✅ ${successMessage}` }
+      { id: generateUUID(), role: "bot", content: `✅ ${successMessage}`, action: null }
     ]);
     setShowMailingListSignup(false);
   };
@@ -237,7 +243,7 @@ export const useMessages = () => {
   const handleSmsFormSuccess = (data) => {
     setMessages(prev => [
       ...prev,
-      { role: "bot", content: `✅ Thanks for reaching out! We've received your message and will respond to ${data.phoneNumber} shortly.` }
+      { id: generateUUID(), role: "bot", content: `✅ Thanks for reaching out! We've received your message and will respond to ${data.phoneNumber} shortly.`, action: null }
     ]);
     
     setShowSmsContactForm(false);
@@ -259,7 +265,7 @@ export const useMessages = () => {
   // Message sending logic
   const sendMessage = async () => {
     if (!input.trim()) return;
-    const updatedMessages = [...messages, { role: "user", content: input }];
+    const updatedMessages = [...messages, { id: generateUUID(), role: "user", content: input, action: null }];
     setMessages(updatedMessages);
     
     // Track user message
@@ -285,6 +291,7 @@ export const useMessages = () => {
         setMessages(prev => [
           ...prev, 
           { 
+            id: generateUUID(),
             role: "bot", 
             content: botResponse,
             action: {
@@ -378,13 +385,13 @@ export const useMessages = () => {
       if (botResponse) {
         analyticsService.trackMessage(botResponse, 'bot');
       }
-      
-      setMessages(prev => [...prev, { role: "bot", content: botResponse }]);
+
+      setMessages(prev => [...prev, { id: generateUUID(), role: "bot", content: botResponse, action: null }]);
     } catch (error) {
       console.error("Error processing message:", error);
       const errorMessage = "I'm having trouble processing your request. Please try again.";
       analyticsService.trackMessage(errorMessage, 'bot');
-      setMessages(prev => [...prev, { role: "bot", content: errorMessage }]);
+      setMessages(prev => [...prev, { id: generateUUID(), role: "bot", content: errorMessage, action: null }]);
     } finally {
       setLoading(false);
     }
@@ -403,30 +410,22 @@ export const useMessages = () => {
     logout();
     setMessages(prev => [
       ...prev,
-      { role: "bot", content: "You have been logged out successfully." }
+      { id: generateUUID(), role: "bot", content: "You have been logged out successfully.", action: null }
     ]);
   };
 
   // Add feedback handling
   const handleFeedback = async (feedbackData) => {
-    try {
-      // Submit feedback to the API
-      await submitFeedback(feedbackData);
+    const { msg, feedbackType } = feedbackData;
+    console.log("Submitting feedback:", feedbackData);
 
-      // Update the message to show feedback was submitted
-      setMessages(prev => prev.map(msg => 
-        msg.id === feedbackData.messageId
-          ? { ...msg, feedbackSubmitted: true }
-          : msg
-      ));
-
-      // Track feedback in analytics
-      analyticsService.trackFeedback(feedbackData.rating, feedbackData.comment);
-      
-      return true;
-    } catch (error) {
-      console.error("Error submitting feedback:", error);
-      throw error;
+    if (feedbackType === "upvote" && !showFeedbackWidget.messageId) {
+      console.log("Submitting upvote feedback for message:", msg.id);
+      setShowFeedbackWidget({ type: "upvote", messageId: msg.id });
+    }
+    if (feedbackType === "downvote" && !showFeedbackWidget.messageId) {
+      console.log("Submitting downvote feedback for message:", msg.id);
+      setShowFeedbackWidget({ type: "downvote", messageId: msg.id });
     }
   };
 
@@ -460,6 +459,8 @@ export const useMessages = () => {
     handleSmsFormSuccess,
     handleSmsFormClose,
     handleSmsChatClose,
-    handleFeedback
+    handleFeedback,
+    showFeedbackWidget,
+    setShowFeedbackWidget,
   };
 };

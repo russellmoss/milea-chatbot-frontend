@@ -1,6 +1,5 @@
 // src/components/chat/services/messageStore.ts
 import api from '../services/apiService';
-import { generateUUID } from "../utils/uuidGenerator";
 
 
 export const storeMessage = async (messageData: MessageData) => {
@@ -12,8 +11,10 @@ export const storeMessage = async (messageData: MessageData) => {
 };
 
 interface Message {
+  id: string;
   role: 'user' | 'bot';
   content: string;
+  action: any;
 }
 
 interface MessageData {
@@ -21,21 +22,26 @@ interface MessageData {
   sessionId: string;
   sender: 'user' | 'bot';
   content: string;
+  action: any | null;
   timestamp: string;
-  feedback?: {
-    is_helpful: boolean;
-    comment?: string;
-  };
+  feedback: MessageFeedback;
+}
+
+interface MessageFeedback {
+  feedbackGiven: boolean;
+  positiveFeedback: string;
+  negativeFeedback: string;
 }
 
 
 export const generateMessageData = (message: Message, sessionId: string): MessageData => {
   return {
-    id: generateUUID(),
+    id: message.id,
     sessionId: sessionId,
     sender: message.role,
     content: message.content,
+    action: message.action,
     timestamp: new Date().toISOString(),
-    feedback: undefined,
+    feedback: { feedbackGiven: false, positiveFeedback: "", negativeFeedback: "" }
   };
 };
